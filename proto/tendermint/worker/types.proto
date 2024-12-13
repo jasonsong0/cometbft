@@ -1,0 +1,14 @@
+syntax = "proto3";
+package tendermint.worker;
+
+option go_package = "github.com/cometbft/cometbft/proto/tendermint/worker";
+
+message Batch {
+  repeated bytes batch = 1;
+}
+
+message Message {
+  oneof sum {
+    Batch batch = 1;
+  }
+}

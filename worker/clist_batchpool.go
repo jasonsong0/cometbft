@@ -231,6 +231,7 @@ func (mem *CListBatchpool) notifyBatchesAvailable() {
 }
 
 // Safe for concurrent use by multiple goroutines.
+// primary decides mas bytes, gas for each worker.
 func (mem *CListBatchpool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Batches {
 	mem.updateMtx.RLock()
 	defer mem.updateMtx.RUnlock()
@@ -252,11 +253,11 @@ func (mem *CListBatchpool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Batc
 		dataSize := types.ComputeProtoSizeForBatches([]types.Batch{b.batch})
 
 		// Check total size requirement
-		if maxBytes > -1 && runningSize+dataSize > maxBytes {
+		if maxBytes > -1 && runningSize+int64(dataSize) > maxBytes {
 			return batches[:len(batches)-1]
 		}
 
-		runningSize += dataSize
+		runningSize += int64(dataSize)
 
 		// Check total gas requirement.
 		// If maxGas is negative, skip this check.

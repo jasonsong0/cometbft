@@ -99,6 +99,30 @@ func NewCListMempool(
 	return mp
 }
 
+func (mem *CListMempool) makeBatchpoolBatch(batchOwner string) *batchpoolBatch {
+
+	//TODO: check max limit
+	txs := mem.ReapMaxBytesMaxGas(maxBytesOfTxsInBatch, -1)
+
+	batch := types.Batch{
+		TxArr:        txs,
+		BatchOwner:   batchOwner,
+		BatchSize:    types.ComputeProtoSizeForTxs(txs),
+		BatchCreated: time.Now(),
+		BatchRecved:  time.Now(),
+	}
+	copy(batch.BatchKey[:], txs.Hash()[:types.BatchKeySize])
+
+	batchpool := &batchpoolBatch{
+		height:    0, //TODO: set height
+		gasWanted: 0, //TODO: set gasWanted
+		batch:     batch,
+		created:   time.Now(), //TODO: same as batchCreated? delete?
+	}
+
+	return batchpool
+}
+
 func (mem *CListMempool) getCElement(txKey types.TxKey) (*clist.CElement, bool) {
 	if e, ok := mem.txsMap.Load(txKey); ok {
 		return e.(*clist.CElement), true

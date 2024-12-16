@@ -5,16 +5,21 @@ package worker
 
 import (
 	fmt "fmt"
+	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
+	_ "github.com/cosmos/gogoproto/types"
+	github_com_cosmos_gogoproto_types "github.com/cosmos/gogoproto/types"
 	io "io"
 	math "math"
 	math_bits "math/bits"
+	time "time"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+var _ = time.Kitchen
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
@@ -22,22 +27,25 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type Batch struct {
-	Batch [][]byte `protobuf:"bytes,1,rep,name=batch,proto3" json:"batch,omitempty"`
+type BatchData struct {
+	Txs          [][]byte  `protobuf:"bytes,1,rep,name=txs,proto3" json:"txs,omitempty"`
+	BatchKey     []byte    `protobuf:"bytes,2,opt,name=batch_key,json=batchKey,proto3" json:"batch_key,omitempty"`
+	BatchOwner   string    `protobuf:"bytes,3,opt,name=batch_owner,json=batchOwner,proto3" json:"batch_owner,omitempty"`
+	BatchCreated time.Time `protobuf:"bytes,5,opt,name=batch_created,json=batchCreated,proto3,stdtime" json:"batch_created"`
 }
 
-func (m *Batch) Reset()         { *m = Batch{} }
-func (m *Batch) String() string { return proto.CompactTextString(m) }
-func (*Batch) ProtoMessage()    {}
-func (*Batch) Descriptor() ([]byte, []int) {
+func (m *BatchData) Reset()         { *m = BatchData{} }
+func (m *BatchData) String() string { return proto.CompactTextString(m) }
+func (*BatchData) ProtoMessage()    {}
+func (*BatchData) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5b155f9c34ea770a, []int{0}
 }
-func (m *Batch) XXX_Unmarshal(b []byte) error {
+func (m *BatchData) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Batch) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *BatchData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_Batch.Marshal(b, m, deterministic)
+		return xxx_messageInfo_BatchData.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -47,29 +55,103 @@ func (m *Batch) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-func (m *Batch) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Batch.Merge(m, src)
+func (m *BatchData) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BatchData.Merge(m, src)
 }
-func (m *Batch) XXX_Size() int {
+func (m *BatchData) XXX_Size() int {
 	return m.Size()
 }
-func (m *Batch) XXX_DiscardUnknown() {
-	xxx_messageInfo_Batch.DiscardUnknown(m)
+func (m *BatchData) XXX_DiscardUnknown() {
+	xxx_messageInfo_BatchData.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Batch proto.InternalMessageInfo
+var xxx_messageInfo_BatchData proto.InternalMessageInfo
 
-func (m *Batch) GetBatch() [][]byte {
+func (m *BatchData) GetTxs() [][]byte {
 	if m != nil {
-		return m.Batch
+		return m.Txs
 	}
 	return nil
+}
+
+func (m *BatchData) GetBatchKey() []byte {
+	if m != nil {
+		return m.BatchKey
+	}
+	return nil
+}
+
+func (m *BatchData) GetBatchOwner() string {
+	if m != nil {
+		return m.BatchOwner
+	}
+	return ""
+}
+
+func (m *BatchData) GetBatchCreated() time.Time {
+	if m != nil {
+		return m.BatchCreated
+	}
+	return time.Time{}
+}
+
+type BatchAck struct {
+	BatchKey    []byte    `protobuf:"bytes,1,opt,name=batch_key,json=batchKey,proto3" json:"batch_key,omitempty"`
+	BatchRecved time.Time `protobuf:"bytes,2,opt,name=batch_recved,json=batchRecved,proto3,stdtime" json:"batch_recved"`
+}
+
+func (m *BatchAck) Reset()         { *m = BatchAck{} }
+func (m *BatchAck) String() string { return proto.CompactTextString(m) }
+func (*BatchAck) ProtoMessage()    {}
+func (*BatchAck) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5b155f9c34ea770a, []int{1}
+}
+func (m *BatchAck) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *BatchAck) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_BatchAck.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *BatchAck) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BatchAck.Merge(m, src)
+}
+func (m *BatchAck) XXX_Size() int {
+	return m.Size()
+}
+func (m *BatchAck) XXX_DiscardUnknown() {
+	xxx_messageInfo_BatchAck.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BatchAck proto.InternalMessageInfo
+
+func (m *BatchAck) GetBatchKey() []byte {
+	if m != nil {
+		return m.BatchKey
+	}
+	return nil
+}
+
+func (m *BatchAck) GetBatchRecved() time.Time {
+	if m != nil {
+		return m.BatchRecved
+	}
+	return time.Time{}
 }
 
 type Message struct {
 	// Types that are valid to be assigned to Sum:
 	//
-	//	*Message_Batch
+	//	*Message_BatchData
+	//	*Message_BatchAck
 	Sum isMessage_Sum `protobuf_oneof:"sum"`
 }
 
@@ -77,7 +159,7 @@ func (m *Message) Reset()         { *m = Message{} }
 func (m *Message) String() string { return proto.CompactTextString(m) }
 func (*Message) ProtoMessage()    {}
 func (*Message) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5b155f9c34ea770a, []int{1}
+	return fileDescriptor_5b155f9c34ea770a, []int{2}
 }
 func (m *Message) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -112,11 +194,15 @@ type isMessage_Sum interface {
 	Size() int
 }
 
-type Message_Batch struct {
-	Batch *Batch `protobuf:"bytes,1,opt,name=batch,proto3,oneof" json:"batch,omitempty"`
+type Message_BatchData struct {
+	BatchData *BatchData `protobuf:"bytes,1,opt,name=batch_data,json=batchData,proto3,oneof" json:"batch_data,omitempty"`
+}
+type Message_BatchAck struct {
+	BatchAck *BatchAck `protobuf:"bytes,2,opt,name=batch_ack,json=batchAck,proto3,oneof" json:"batch_ack,omitempty"`
 }
 
-func (*Message_Batch) isMessage_Sum() {}
+func (*Message_BatchData) isMessage_Sum() {}
+func (*Message_BatchAck) isMessage_Sum()  {}
 
 func (m *Message) GetSum() isMessage_Sum {
 	if m != nil {
@@ -125,9 +211,16 @@ func (m *Message) GetSum() isMessage_Sum {
 	return nil
 }
 
-func (m *Message) GetBatch() *Batch {
-	if x, ok := m.GetSum().(*Message_Batch); ok {
-		return x.Batch
+func (m *Message) GetBatchData() *BatchData {
+	if x, ok := m.GetSum().(*Message_BatchData); ok {
+		return x.BatchData
+	}
+	return nil
+}
+
+func (m *Message) GetBatchAck() *BatchAck {
+	if x, ok := m.GetSum().(*Message_BatchAck); ok {
+		return x.BatchAck
 	}
 	return nil
 }
@@ -135,34 +228,49 @@ func (m *Message) GetBatch() *Batch {
 // XXX_OneofWrappers is for the internal use of the proto package.
 func (*Message) XXX_OneofWrappers() []interface{} {
 	return []interface{}{
-		(*Message_Batch)(nil),
+		(*Message_BatchData)(nil),
+		(*Message_BatchAck)(nil),
 	}
 }
 
 func init() {
-	proto.RegisterType((*Batch)(nil), "tendermint.worker.Batch")
+	proto.RegisterType((*BatchData)(nil), "tendermint.worker.BatchData")
+	proto.RegisterType((*BatchAck)(nil), "tendermint.worker.BatchAck")
 	proto.RegisterType((*Message)(nil), "tendermint.worker.Message")
 }
 
 func init() { proto.RegisterFile("tendermint/worker/types.proto", fileDescriptor_5b155f9c34ea770a) }
 
 var fileDescriptor_5b155f9c34ea770a = []byte{
-	// 184 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0x2d, 0x49, 0xcd, 0x4b,
-	0x49, 0x2d, 0xca, 0xcd, 0xcc, 0x2b, 0xd1, 0x2f, 0xcf, 0x2f, 0xca, 0x4e, 0x2d, 0xd2, 0x2f, 0xa9,
-	0x2c, 0x48, 0x2d, 0xd6, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x12, 0x44, 0x48, 0xeb, 0x41, 0xa4,
-	0x95, 0x64, 0xb9, 0x58, 0x9d, 0x12, 0x4b, 0x92, 0x33, 0x84, 0x44, 0xb8, 0x58, 0x93, 0x40, 0x0c,
-	0x09, 0x46, 0x05, 0x66, 0x0d, 0x9e, 0x20, 0x08, 0x47, 0xc9, 0x89, 0x8b, 0xdd, 0x37, 0xb5, 0xb8,
-	0x38, 0x31, 0x3d, 0x55, 0xc8, 0x00, 0xa1, 0x80, 0x51, 0x83, 0xdb, 0x48, 0x42, 0x0f, 0xc3, 0x30,
-	0x3d, 0xb0, 0x49, 0x1e, 0x0c, 0x50, 0xcd, 0x4e, 0xac, 0x5c, 0xcc, 0xc5, 0xa5, 0xb9, 0x4e, 0x7e,
-	0x27, 0x1e, 0xc9, 0x31, 0x5e, 0x78, 0x24, 0xc7, 0xf8, 0xe0, 0x91, 0x1c, 0xe3, 0x84, 0xc7, 0x72,
-	0x0c, 0x17, 0x1e, 0xcb, 0x31, 0xdc, 0x78, 0x2c, 0xc7, 0x10, 0x65, 0x92, 0x9e, 0x59, 0x92, 0x51,
-	0x9a, 0xa4, 0x97, 0x9c, 0x9f, 0xab, 0x9f, 0x9c, 0x9f, 0x9b, 0x5a, 0x92, 0x94, 0x56, 0x82, 0x60,
-	0x80, 0xdd, 0xac, 0x8f, 0xe1, 0xa3, 0x24, 0x36, 0xb0, 0x84, 0x31, 0x20, 0x00, 0x00, 0xff, 0xff,
-	0x90, 0x48, 0x15, 0xa0, 0xed, 0x00, 0x00, 0x00,
+	// 386 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x92, 0x41, 0x6b, 0xe2, 0x40,
+	0x14, 0xc7, 0x33, 0x1b, 0xdc, 0xd5, 0xd1, 0x85, 0xdd, 0xb0, 0x87, 0xa0, 0xbb, 0x49, 0xf0, 0x94,
+	0xd3, 0x04, 0xdc, 0x3d, 0x2d, 0xf4, 0x60, 0x5a, 0xa8, 0xa5, 0xb4, 0x85, 0xd0, 0x53, 0x2f, 0x32,
+	0x99, 0x3c, 0xa3, 0xa4, 0x71, 0x42, 0x32, 0xd6, 0xfa, 0x19, 0x7a, 0xf1, 0x53, 0xf4, 0xb3, 0x78,
+	0xf4, 0xd8, 0x53, 0x5b, 0xf4, 0x8b, 0x94, 0xcc, 0x68, 0xa5, 0x95, 0x42, 0x6f, 0x6f, 0xde, 0xff,
+	0xfd, 0x79, 0xbf, 0xf7, 0xe6, 0xe1, 0x3f, 0x02, 0xc6, 0x11, 0xe4, 0xe9, 0x68, 0x2c, 0xbc, 0x29,
+	0xcf, 0x13, 0xc8, 0x3d, 0x31, 0xcb, 0xa0, 0x20, 0x59, 0xce, 0x05, 0x37, 0x7e, 0xee, 0x64, 0xa2,
+	0xe4, 0xe6, 0xaf, 0x98, 0xc7, 0x5c, 0xaa, 0x5e, 0x19, 0xa9, 0xc2, 0xa6, 0x1d, 0x73, 0x1e, 0x5f,
+	0x83, 0x27, 0x5f, 0xe1, 0x64, 0xe0, 0x89, 0x51, 0x0a, 0x85, 0xa0, 0x69, 0xa6, 0x0a, 0xda, 0xf7,
+	0x08, 0xd7, 0x7c, 0x2a, 0xd8, 0xf0, 0x88, 0x0a, 0x6a, 0xfc, 0xc0, 0xba, 0xb8, 0x2d, 0x4c, 0xe4,
+	0xe8, 0x6e, 0x23, 0x28, 0x43, 0xa3, 0x85, 0x6b, 0x61, 0x29, 0xf7, 0x13, 0x98, 0x99, 0x5f, 0x1c,
+	0xe4, 0x36, 0x82, 0xaa, 0x4c, 0x9c, 0xc2, 0xcc, 0xb0, 0x71, 0x5d, 0x89, 0x7c, 0x3a, 0x86, 0xdc,
+	0xd4, 0x1d, 0xe4, 0xd6, 0x02, 0x2c, 0x53, 0x17, 0x65, 0xc6, 0x38, 0xc1, 0xdf, 0x55, 0x01, 0xcb,
+	0x81, 0x0a, 0x88, 0xcc, 0x8a, 0x83, 0xdc, 0x7a, 0xa7, 0x49, 0x14, 0x16, 0xd9, 0x62, 0x91, 0xcb,
+	0x2d, 0x96, 0x5f, 0x5d, 0x3c, 0xda, 0xda, 0xfc, 0xc9, 0x46, 0x41, 0x43, 0x5a, 0x0f, 0x95, 0xb3,
+	0x9d, 0xe1, 0xaa, 0xe4, 0xec, 0xb2, 0xe4, 0x2d, 0x14, 0x7a, 0x07, 0x75, 0x8c, 0x95, 0xb1, 0x9f,
+	0x03, 0xbb, 0x81, 0x48, 0x42, 0x7f, 0xb6, 0xa5, 0x1a, 0x27, 0x90, 0xc6, 0xf6, 0x1d, 0xc2, 0xdf,
+	0xce, 0xa0, 0x28, 0x68, 0x0c, 0xc6, 0x01, 0x56, 0x63, 0xf5, 0x23, 0x2a, 0xa8, 0x6c, 0x59, 0xef,
+	0xfc, 0x26, 0x7b, 0xbf, 0x40, 0x5e, 0x57, 0xd9, 0xd3, 0x02, 0xc5, 0x28, 0xf7, 0xfa, 0x7f, 0x0b,
+	0x4c, 0x59, 0xb2, 0x01, 0x6a, 0x7d, 0xe4, 0xee, 0xb2, 0xa4, 0xa7, 0x6d, 0xe6, 0xe9, 0xb2, 0xc4,
+	0xaf, 0x60, 0xbd, 0x98, 0xa4, 0xfe, 0xf9, 0x62, 0x65, 0xa1, 0xe5, 0xca, 0x42, 0xcf, 0x2b, 0x0b,
+	0xcd, 0xd7, 0x96, 0xb6, 0x5c, 0x5b, 0xda, 0xc3, 0xda, 0xd2, 0xae, 0xfe, 0xc5, 0x23, 0x31, 0x9c,
+	0x84, 0x84, 0xf1, 0xd4, 0x63, 0x3c, 0x05, 0x11, 0x0e, 0xc4, 0x2e, 0x50, 0x27, 0xb1, 0x77, 0x4e,
+	0xe1, 0x57, 0x29, 0xfc, 0x7d, 0x09, 0x00, 0x00, 0xff, 0xff, 0xb3, 0x2c, 0x30, 0x63, 0x6a, 0x02,
+	0x00, 0x00,
 }
 
-func (m *Batch) Marshal() (dAtA []byte, err error) {
+func (m *BatchData) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -172,24 +280,84 @@ func (m *Batch) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Batch) MarshalTo(dAtA []byte) (int, error) {
+func (m *BatchData) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Batch) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *BatchData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if len(m.Batch) > 0 {
-		for iNdEx := len(m.Batch) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Batch[iNdEx])
-			copy(dAtA[i:], m.Batch[iNdEx])
-			i = encodeVarintTypes(dAtA, i, uint64(len(m.Batch[iNdEx])))
+	n1, err1 := github_com_cosmos_gogoproto_types.StdTimeMarshalTo(m.BatchCreated, dAtA[i-github_com_cosmos_gogoproto_types.SizeOfStdTime(m.BatchCreated):])
+	if err1 != nil {
+		return 0, err1
+	}
+	i -= n1
+	i = encodeVarintTypes(dAtA, i, uint64(n1))
+	i--
+	dAtA[i] = 0x2a
+	if len(m.BatchOwner) > 0 {
+		i -= len(m.BatchOwner)
+		copy(dAtA[i:], m.BatchOwner)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.BatchOwner)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.BatchKey) > 0 {
+		i -= len(m.BatchKey)
+		copy(dAtA[i:], m.BatchKey)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.BatchKey)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Txs) > 0 {
+		for iNdEx := len(m.Txs) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Txs[iNdEx])
+			copy(dAtA[i:], m.Txs[iNdEx])
+			i = encodeVarintTypes(dAtA, i, uint64(len(m.Txs[iNdEx])))
 			i--
 			dAtA[i] = 0xa
 		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *BatchAck) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *BatchAck) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *BatchAck) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	n2, err2 := github_com_cosmos_gogoproto_types.StdTimeMarshalTo(m.BatchRecved, dAtA[i-github_com_cosmos_gogoproto_types.SizeOfStdTime(m.BatchRecved):])
+	if err2 != nil {
+		return 0, err2
+	}
+	i -= n2
+	i = encodeVarintTypes(dAtA, i, uint64(n2))
+	i--
+	dAtA[i] = 0x12
+	if len(m.BatchKey) > 0 {
+		i -= len(m.BatchKey)
+		copy(dAtA[i:], m.BatchKey)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.BatchKey)))
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -226,16 +394,16 @@ func (m *Message) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Message_Batch) MarshalTo(dAtA []byte) (int, error) {
+func (m *Message_BatchData) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Message_Batch) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *Message_BatchData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.Batch != nil {
+	if m.BatchData != nil {
 		{
-			size, err := m.Batch.MarshalToSizedBuffer(dAtA[:i])
+			size, err := m.BatchData.MarshalToSizedBuffer(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -244,6 +412,27 @@ func (m *Message_Batch) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		}
 		i--
 		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+func (m *Message_BatchAck) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *Message_BatchAck) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.BatchAck != nil {
+		{
+			size, err := m.BatchAck.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTypes(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
 	}
 	return len(dAtA) - i, nil
 }
@@ -258,18 +447,43 @@ func encodeVarintTypes(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *Batch) Size() (n int) {
+func (m *BatchData) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if len(m.Batch) > 0 {
-		for _, b := range m.Batch {
+	if len(m.Txs) > 0 {
+		for _, b := range m.Txs {
 			l = len(b)
 			n += 1 + l + sovTypes(uint64(l))
 		}
 	}
+	l = len(m.BatchKey)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	l = len(m.BatchOwner)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	l = github_com_cosmos_gogoproto_types.SizeOfStdTime(m.BatchCreated)
+	n += 1 + l + sovTypes(uint64(l))
+	return n
+}
+
+func (m *BatchAck) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.BatchKey)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	l = github_com_cosmos_gogoproto_types.SizeOfStdTime(m.BatchRecved)
+	n += 1 + l + sovTypes(uint64(l))
 	return n
 }
 
@@ -285,14 +499,26 @@ func (m *Message) Size() (n int) {
 	return n
 }
 
-func (m *Message_Batch) Size() (n int) {
+func (m *Message_BatchData) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.Batch != nil {
-		l = m.Batch.Size()
+	if m.BatchData != nil {
+		l = m.BatchData.Size()
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	return n
+}
+func (m *Message_BatchAck) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.BatchAck != nil {
+		l = m.BatchAck.Size()
 		n += 1 + l + sovTypes(uint64(l))
 	}
 	return n
@@ -304,7 +530,7 @@ func sovTypes(x uint64) (n int) {
 func sozTypes(x uint64) (n int) {
 	return sovTypes(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Batch) Unmarshal(dAtA []byte) error {
+func (m *BatchData) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -327,15 +553,15 @@ func (m *Batch) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Batch: wiretype end group for non-group")
+			return fmt.Errorf("proto: BatchData: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Batch: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: BatchData: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Batch", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Txs", wireType)
 			}
 			var byteLen int
 			for shift := uint(0); ; shift += 7 {
@@ -362,8 +588,224 @@ func (m *Batch) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Batch = append(m.Batch, make([]byte, postIndex-iNdEx))
-			copy(m.Batch[len(m.Batch)-1], dAtA[iNdEx:postIndex])
+			m.Txs = append(m.Txs, make([]byte, postIndex-iNdEx))
+			copy(m.Txs[len(m.Txs)-1], dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BatchKey", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.BatchKey = append(m.BatchKey[:0], dAtA[iNdEx:postIndex]...)
+			if m.BatchKey == nil {
+				m.BatchKey = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BatchOwner", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.BatchOwner = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BatchCreated", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := github_com_cosmos_gogoproto_types.StdTimeUnmarshal(&m.BatchCreated, dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTypes(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *BatchAck) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTypes
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: BatchAck: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: BatchAck: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BatchKey", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.BatchKey = append(m.BatchKey[:0], dAtA[iNdEx:postIndex]...)
+			if m.BatchKey == nil {
+				m.BatchKey = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BatchRecved", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := github_com_cosmos_gogoproto_types.StdTimeUnmarshal(&m.BatchRecved, dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -417,7 +859,7 @@ func (m *Message) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Batch", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field BatchData", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -444,11 +886,46 @@ func (m *Message) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			v := &Batch{}
+			v := &BatchData{}
 			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			m.Sum = &Message_Batch{v}
+			m.Sum = &Message_BatchData{v}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BatchAck", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &BatchAck{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Sum = &Message_BatchAck{v}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

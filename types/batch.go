@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	workerproto "github.com/cometbft/cometbft/proto/tendermint/worker"
 )
 
 // BatchHashSize is the size of the batch digset key index
@@ -42,14 +42,12 @@ func (b Batch) String() string {
 }
 
 // ToProto converts Data to protobuf
-func (b *Batch) ToProto() cmtproto.Batch {
-	tp := new(cmtproto.Batch)
+func (b *Batch) ToProto() workerproto.BatchData {
+	tp := new(workerproto.BatchData)
 
 	tp.BatchKey = b.BatchKey[:]
 	tp.BatchOwner = b.BatchOwner
-	tp.BatchSize = b.BatchSize
-	tp.BatchCreated = b.BatchCreated.Unix()
-	tp.BatchRecved = b.BatchRecved.Unix()
+	tp.BatchCreated = b.BatchCreated
 
 	if len(b.TxArr) > 0 {
 		txBzs := make([][]byte, len(b.TxArr))
@@ -62,10 +60,13 @@ func (b *Batch) ToProto() cmtproto.Batch {
 	return *tp
 }
 
-func ComputeProtoSizeForBatches(batches []Batch) int64 {
-	sum := int64(0)
+/*
+func ComputeProtoSizeForBatches(batches []Batch) int {
+	sum := int(0)
 	for _, b := range batches {
-		sum = sum + b.ToProto().Size()
+		p := b.ToProto()
+		sum = sum + p.Size()
 	}
 	return sum
 }
+*/

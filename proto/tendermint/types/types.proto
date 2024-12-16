@@ -176,3 +176,16 @@ message TxProof {
   bytes                   data      = 2;
   tendermint.crypto.Proof proof     = 3;
 }
+
+/*
+message Batch {
+  repeated bytes txs = 1;
+  bytes batch_key = 2;
+  string batch_owner = 3;
+  int64 batch_size = 4;
+  google.protobuf.Timestamp batch_created = 5
+  [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
+  google.protobuf.Timestamp batch_recved = 6
+  [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];  
+}
+  */

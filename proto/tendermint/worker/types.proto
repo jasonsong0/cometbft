@@ -3,12 +3,32 @@ package tendermint.worker;
 
 option go_package = "github.com/cometbft/cometbft/proto/tendermint/worker";
 
-message Batch {
-  repeated bytes batch = 1;
+import "gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
+
+message BatchData {
+  repeated bytes txs = 1;
+  bytes batch_key = 2;
+  string batch_owner = 3;
+  google.protobuf.Timestamp batch_created = 5
+  [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
 }
+
+//TODO: for v1, send data with single batch. consider multiple batches in future
+//message BatchDatas {
+//  repeated BatchData batch_datas = 1;
+//}
+
+message BatchAck {
+  bytes batch_key = 1;
+  google.protobuf.Timestamp batch_recved = 2
+  [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];  
+}
+
 
 message Message {
   oneof sum {
-    Batch batch = 1;
+    BatchData batch_data = 1;
+    BatchAck batch_ack = 2;
   }
 }

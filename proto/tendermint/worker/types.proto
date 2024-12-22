@@ -21,7 +21,8 @@ message BatchData {
 
 message BatchAck {
   bytes batch_key = 1;
-  google.protobuf.Timestamp batch_recved = 2
+  string batch_owner = 2;
+  google.protobuf.Timestamp batch_recved = 3
   [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];  
 }
 

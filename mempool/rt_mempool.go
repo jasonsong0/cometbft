@@ -1,14 +1,14 @@
 package mempool
 
 import (
-	"errors"
-
 	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/libs/log"
 	"github.com/cometbft/cometbft/libs/service"
+	cmtsync "github.com/cometbft/cometbft/libs/sync"
 	"github.com/cometbft/cometbft/p2p"
 	"github.com/cometbft/cometbft/types"
+	"github.com/cometbft/cometbft/worker"
 )
-
 
 // RtMempool is a mempool that forward tx to worker.
 // cacheing for filtering dup TXs
@@ -22,94 +22,57 @@ import (
 // mempool uses a concurrent list structure for storing transactions that can
 // be efficiently accessed by multiple concurrent readers.
 type RtMempool struct {
-	height   atomic.Int64 // the last block Update()'d to
-	
-	// notify listeners (ie. consensus) when txs are available
-	notifiedTxsAvailable atomic.Bool
-	txsAvailable         chan struct{} // fires once for each height, when the mempool is not empty
 
 	//config *config.MempoolConfig
 
 	// Exclusive mutex for Update method to prevent concurrent execution of
 	// CheckTx or ReapMaxBytesMaxGas(ReapMaxTxs) methods.
 	updateMtx cmtsync.RWMutex
-	preCheck  PreCheckFunc
-	postCheck PostCheckFunc
 
-	txs          *clist.CList // concurrent linked-list of good txs
-	proxyAppConn proxy.AppConnMempool
-
-	// Keeps track of the rechecking process.
-	recheck *recheck
-
-	// Map for quick access to txs to record sender in CheckTx.
-	// txsMap: txKey -> CElement
-	txsMap sync.Map
-
-	// Keep a cache of already-seen txs.
-	// This reduces the pressure on the proxyApp.
-	cache TxCache
+	//TODO: for v1. use single worker.
+	//routing the tx directly
+	workerMempool worker.Mempool
 
 	logger  log.Logger
 	metrics *Metrics
 }
 
-// errNotAllowed indicates that the operation is not allowed with `rt` mempool.
-var errNotAllowed = errors.New("not allowed with `rt` mempool")
-
 var _ Mempool = &RtMempool{}
 
-// CheckTx call CheckTx to worker. 
-func (mem *RtMempool) CheckTx(types.Tx, func(*abci.ResponseCheckTx), TxInfo) error {
-	mem.updateMtx.RLock()
-	// use defer to unlock mutex because application (*local client*) might panic
-	defer mem.updateMtx.RUnlock()
+// mempool CheckTx called by client. bypass to worker CheckTx.
+func (mem *RtMempool) CheckTx(
+	tx types.Tx,
+	cb func(*abci.ResponseCheckTx),
+	txInfo TxInfo) error {
 
-	if mem.preCheck != nil {
-		if err := mem.preCheck(tx); err != nil {
-			return ErrPreCheck{Err: err}
-		}
+	//TODO: routing to worker
+	ti := worker.TxInfo{
+		SenderID:    txInfo.SenderID,
+		SenderP2PID: txInfo.SenderP2PID,
 	}
-
-	
-
-	// NOTE: proxyAppConn may error if tx buffer is full
-	if err := mem.proxyAppConn.Error(); err != nil {
-		return ErrAppConnMempool{Err: err}
-	}
-
-	if !mem.cache.Push(tx) { // if the transaction already exists in the cache
-		// Record a new sender for a tx we've already seen.
-		// Note it's possible a tx is still in the cache but no longer in the mempool
-		// (eg. after committing a block, txs are removed from mempool but not cache),
-		// so we only record the sender for txs still in the mempool.
-		if memTx := mem.getMemTx(tx.Key()); memTx != nil {
-			memTx.addSender(txInfo.SenderID)
-			// TODO: consider punishing peer for dups,
-			// its non-trivial since invalid txs can become valid,
-			// but they can spam the same tx with little cost to them atm.
-		}
-		return ErrTxInCache
-	}
-
-	reqRes, err := mem.proxyAppConn.CheckTxAsync(context.TODO(), &abci.RequestCheckTx{Tx: tx})
-	if err != nil {
-		panic(fmt.Errorf("CheckTx request for tx %s failed: %w", log.NewLazySprintf("%v", tx.Hash()), err))
-	}
-	reqRes.SetCallback(mem.reqResCb(tx, txInfo, cb))
+	mem.workerMempool.CheckTx(tx, cb, ti)
 
 	return nil
 
 }
 
 // RemoveTxByKey always returns an error.
-func (*RtMempool) RemoveTxByKey(types.TxKey) error { return errNotAllowed }
+func (*RtMempool) RemoveTxByKey(types.TxKey) error {
+	panic("rtMempool RemoveTxByKey should not be called")
+	//return errNotAllowed
+}
 
 // ReapMaxBytesMaxGas always returns nil.
-func (*RtMempool) ReapMaxBytesMaxGas(int64, int64) types.Txs { return nil }
+func (*RtMempool) ReapMaxBytesMaxGas(int64, int64) types.Txs {
+	panic("rtMempool ReapMAxBytesMaxGas should not be called")
+	//return nil
+}
 
 // ReapMaxTxs always returns nil.
-func (*RtMempool) ReapMaxTxs(int) types.Txs { return nil }
+func (*RtMempool) ReapMaxTxs(int) types.Txs {
+	panic("rtMempool ReapMAxTxs should not be called")
+	//return nil
+}
 
 // Lock does nothing.
 func (*RtMempool) Lock() {}

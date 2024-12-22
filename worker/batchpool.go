@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	BatchpoolChannelBase = byte(0x30) // Batch channel used 0x30~0x3f for poc v1
+	BatchpoolChannelBase = byte(0x32) // Batch channel used 0x32~0x3f for poc v1
 
 	// PeerCatchupSleepIntervalMS defines how much time to sleep if a peer is behind
 	PeerCatchupSleepIntervalMS = 100

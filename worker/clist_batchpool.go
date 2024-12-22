@@ -188,6 +188,9 @@ func (mem *CListBatchpool) addBatch(b *batchpoolBatch) {
 	mem.batchesMap.Store(b.batch.BatchKey, e)
 	mem.batchesBytes.Add(b.batch.BatchSize)
 	mem.metrics.TxSizeBytes.Observe(float64(b.batch.BatchSize))
+
+	//TODO: store to dagstore
+
 }
 
 // RemoveTxByKey removes a transaction from the Batchpool by its TxKey index.
@@ -232,6 +235,7 @@ func (mem *CListBatchpool) notifyBatchesAvailable() {
 
 // Safe for concurrent use by multiple goroutines.
 // primary decides mas bytes, gas for each worker.
+// only returns acked batches
 func (mem *CListBatchpool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Batches {
 	mem.updateMtx.RLock()
 	defer mem.updateMtx.RUnlock()
@@ -247,6 +251,11 @@ func (mem *CListBatchpool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Batc
 	batches := make([]types.Batch, 0, mem.batches.Len())
 	for e := mem.batches.Front(); e != nil; e = e.Next() {
 		b := e.Value.(*batchpoolBatch)
+
+		// should be acked to process next step
+		if !b.isMaj23() {
+			break
+		}
 
 		batches = append(batches, b.batch)
 
@@ -318,6 +327,21 @@ func (mem *CListBatchpool) Update(
 	// Update metrics
 	mem.metrics.Size.Set(float64(mem.Size()))
 	mem.metrics.SizeBytes.Set(float64(mem.SizeBytes()))
+
+	return nil
+}
+
+// called when batchpool consumpted by primary
+func (bp *CListBatchpool) UpdateByPrimary(b types.Batch) error {
+	bp.logger.Debug("UpdateByPrimary", "batchkey", b.BatchKey, "size", b.BatchSize)
+
+	// Remove committed batch from the Batchpool.
+	//
+	if err := bp.RemoveBatchByKey(b.BatchKey); err != nil {
+		bp.logger.Debug("Committed batch not in local Batchpool (not an error)",
+			"key", b.BatchKey,
+			"error", err.Error())
+	}
 
 	return nil
 }

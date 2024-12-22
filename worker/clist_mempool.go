@@ -82,6 +82,7 @@ func NewCListMempool(
 		logger:       log.NewNopLogger(),
 		metrics:      NopMetrics(),
 	}
+	// not use height. use 0 for poc v1.
 	mp.height.Store(height)
 
 	if cfg.CacheSize > 0 {
@@ -104,17 +105,20 @@ func (mem *CListMempool) makeBatchpoolBatch(batchOwner string) *batchpoolBatch {
 	//TODO: check max limit
 	txs := mem.ReapMaxBytesMaxGas(maxBytesOfTxsInBatch, -1)
 
+	if txs.Len() == 0 {
+		return nil
+	}
+
 	batch := types.Batch{
 		TxArr:        txs,
 		BatchOwner:   batchOwner,
 		BatchSize:    types.ComputeProtoSizeForTxs(txs),
 		BatchCreated: time.Now(),
-		BatchRecved:  time.Now(),
 	}
 	copy(batch.BatchKey[:], txs.Hash()[:types.BatchKeySize])
 
 	batchpool := &batchpoolBatch{
-		height:    0, //TODO: set height
+		height:    0, //TODO: set height or dag-round
 		gasWanted: 0, //TODO: set gasWanted
 		batch:     batch,
 		created:   time.Now(), //TODO: same as batchCreated? delete?
@@ -240,10 +244,7 @@ func (mem *CListMempool) TxsWaitChan() <-chan struct{} {
 	return mem.txs.WaitChan()
 }
 
-// It blocks if we're waiting on Update() or Reap().
-// cb: A callback from the CheckTx command.
-//
-//	It gets called from another goroutine.
+//	It called by client via routing mempool. runs from another goroutine.
 //
 // CONTRACT: Either cb will get called, or err returned.
 //
@@ -296,6 +297,7 @@ func (mem *CListMempool) CheckTx(
 		return ErrTxInCache
 	}
 
+	//TODO: not sure for concurrent access for multiple worker. need to check
 	reqRes, err := mem.proxyAppConn.CheckTxAsync(context.TODO(), &abci.RequestCheckTx{Tx: tx})
 	if err != nil {
 		panic(fmt.Errorf("CheckTx request for tx %s failed: %w", log.NewLazySprintf("%v", tx.Hash()), err))
@@ -360,10 +362,14 @@ func (mem *CListMempool) reqResCb(
 	externalCb func(*abci.ResponseCheckTx),
 ) func(res *abci.Response) {
 	return func(res *abci.Response) {
-		if !mem.recheck.done() {
-			panic(log.NewLazySprintf("rechecking has not finished; cannot check new tx %v",
-				types.Tx(tx).Hash()))
-		}
+
+		/*
+			// not use recheck for poc v1.
+			if !mem.recheck.done() {
+				panic(log.NewLazySprintf("rechecking has not finished; cannot check new tx %v",
+					types.Tx(tx).Hash()))
+			}
+		*/
 
 		mem.resCbFirstTime(tx, txInfo, res)
 
@@ -607,6 +613,8 @@ func (mem *CListMempool) ReapMaxTxs(max int) types.Txs {
 }
 
 // Lock() must be help by the caller during execution.
+// if height = 0, used to clear the tx noti for checking batch maker
+// otherwise, used to update the height and clear the mem cache
 func (mem *CListMempool) Update(
 	height int64,
 	txs types.Txs,
@@ -616,8 +624,17 @@ func (mem *CListMempool) Update(
 ) error {
 	mem.logger.Debug("Update", "height", height, "len(txs)", len(txs))
 
+	// if height==0, just clear the tx noti for checking batch maker.
+	if height == 0 {
+		mem.notifiedTxsAvailable.Store(false)
+		return nil
+	}
+
 	// Set height
 	mem.height.Store(height)
+
+	// have to clear to noti later.
+	// worker clear the
 	mem.notifiedTxsAvailable.Store(false)
 
 	if preCheck != nil {
@@ -654,9 +671,10 @@ func (mem *CListMempool) Update(
 	}
 
 	// Recheck txs left in the mempool to remove them if they became invalid in the new state.
-	if mem.config.Recheck {
+	/*if mem.config.Recheck {
 		mem.recheckTxs()
 	}
+	*/
 
 	// Notify if there are still txs left in the mempool.
 	if mem.Size() > 0 {

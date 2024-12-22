@@ -25,8 +25,11 @@ type Batch struct {
 
 	BatchSize int64
 
-	BatchCreated time.Time
-	BatchRecved  time.Time // recv time at reactor
+	BatchCreated   time.Time
+	BatchConfirmed time.Time                // recv enough batch.
+	BatchRTT       map[string]time.Duration // RTT for each peer
+	BatchAcked     map[string]float64       // acked and voting power
+
 }
 
 type Batches []Batch
@@ -38,7 +41,7 @@ func (b Batch) Hash() []byte {
 
 // String returns the hex-encoded batch as a string.
 func (b Batch) String() string {
-	return fmt.Sprintf("Batch{%X} from %s, %x->%x", b.BatchKey, b.BatchOwner, b.BatchCreated, b.BatchRecved)
+	return fmt.Sprintf("Batch{%X} from %s, %x->%x", b.BatchKey, b.BatchOwner, b.BatchCreated, b.BatchConfirmed)
 }
 
 // ToProto converts Data to protobuf
@@ -60,7 +63,6 @@ func (b *Batch) ToProto() workerproto.BatchData {
 	return *tp
 }
 
-/*
 func ComputeProtoSizeForBatches(batches []Batch) int {
 	sum := int(0)
 	for _, b := range batches {
@@ -69,4 +71,3 @@ func ComputeProtoSizeForBatches(batches []Batch) int {
 	}
 	return sum
 }
-*/

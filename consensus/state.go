@@ -62,9 +62,9 @@ func (ti *timeoutInfo) String() string {
 	return fmt.Sprintf("%v ; %d/%d %v", ti.Duration, ti.Height, ti.Round, ti.Step)
 }
 
-// interface to the mempool
-type txNotifier interface {
-	TxsAvailable() <-chan struct{}
+// interface to the cert for leader
+type certNotifier interface {
+	CertsAvailable() <-chan struct{}
 }
 
 // interface to the evidence pool
@@ -90,8 +90,8 @@ type State struct {
 	// create and execute blocks
 	blockExec *sm.BlockExecutor
 
-	// notify us if txs are available
-	txNotifier txNotifier
+	// notify us if certs are available.
+	certNotifier certNotifier
 
 	// add evidence to the pool
 	// when it's detected
@@ -151,12 +151,13 @@ type State struct {
 type StateOption func(*State)
 
 // NewState returns a new State.
+// NOTE: use txNotifier as new blockHeader Notitifer for dag-consensus
 func NewState(
 	config *cfg.ConsensusConfig,
 	state sm.State,
 	blockExec *sm.BlockExecutor,
 	blockStore sm.BlockStore,
-	txNotifier txNotifier,
+	certNotifier certNotifier,
 	evpool evidencePool,
 	options ...StateOption,
 ) *State {
@@ -164,7 +165,7 @@ func NewState(
 		config:           config,
 		blockExec:        blockExec,
 		blockStore:       blockStore,
-		txNotifier:       txNotifier,
+		certNotifier:     certNotifier,
 		peerMsgQueue:     make(chan msgInfo, msgQueueSize),
 		internalMsgQueue: make(chan msgInfo, msgQueueSize),
 		timeoutTicker:    NewTimeoutTicker(),
@@ -554,6 +555,7 @@ func (cs *State) updateRoundStep(round int32, step cstypes.RoundStepType) {
 
 // enterNewRound(height, 0) at cs.StartTime.
 func (cs *State) scheduleRound0(rs *cstypes.RoundState) {
+	// NOTE: when certs are available, we will enterNewRound by leader. timeouts are scheduled if no blockheader is received.
 	// cs.Logger.Info("scheduleRound0", "now", cmttime.Now(), "startTime", cs.StartTime)
 	sleepDuration := rs.StartTime.Sub(cmttime.Now())
 	cs.scheduleTimeout(sleepDuration, rs.Height, 0, cstypes.RoundStepNewHeight)
@@ -824,8 +826,8 @@ func (cs *State) receiveRoutine(maxSteps int) {
 		var mi msgInfo
 
 		select {
-		case <-cs.txNotifier.TxsAvailable():
-			cs.handleTxsAvailable()
+		case <-cs.certNotifier.CertsAvailable():
+			cs.handleCertsAvailable()
 
 		case mi = <-cs.peerMsgQueue:
 			if err := cs.wal.Write(mi); err != nil {
@@ -990,7 +992,9 @@ func (cs *State) handleTimeout(ti timeoutInfo, rs cstypes.RoundState) {
 			cs.Logger.Error("failed publishing timeout propose", "err", err)
 		}
 
-		cs.enterPrevote(ti.Height, ti.Round)
+		//NOTE: bypass prevote for dag-consensus
+		cs.enterPrecommit(ti.Height, ti.Round)
+		//cs.enterPrevote(ti.Height, ti.Round)
 
 	case cstypes.RoundStepPrevoteWait:
 		if err := cs.eventBus.PublishEventTimeoutWait(cs.RoundStateEvent()); err != nil {
@@ -1012,7 +1016,7 @@ func (cs *State) handleTimeout(ti timeoutInfo, rs cstypes.RoundState) {
 	}
 }
 
-func (cs *State) handleTxsAvailable() {
+func (cs *State) handleCertsAvailable() {
 	cs.mtx.Lock()
 	defer cs.mtx.Unlock()
 
@@ -1158,7 +1162,8 @@ func (cs *State) enterPropose(height int64, round int32) {
 		// else, we'll enterPrevote when the rest of the proposal is received (in AddProposalBlockPart),
 		// or else after timeoutPropose
 		if cs.isProposalComplete() {
-			cs.enterPrevote(height, cs.Round)
+			// NOTE: bypass prevote for dag-consensus.
+			cs.enterPrecommit(height, cs.Round)
 		}
 	}()
 
@@ -2029,33 +2034,16 @@ func (cs *State) addProposalBlockPart(msg *BlockPartMessage, peerID p2p.ID) (add
 
 func (cs *State) handleCompleteProposal(blockHeight int64) {
 	// Update Valid* if we can.
-	prevotes := cs.Votes.Prevotes(cs.Round)
-	blockID, hasTwoThirds := prevotes.TwoThirdsMajority()
-	if hasTwoThirds && !blockID.IsZero() && (cs.ValidRound < cs.Round) {
-		if cs.ProposalBlock.HashesTo(blockID.Hash) {
-			cs.Logger.Debug(
-				"updating valid block to new proposal block",
-				"valid_round", cs.Round,
-				"valid_block_hash", log.NewLazyBlockHash(cs.ProposalBlock),
-			)
-
-			cs.ValidRound = cs.Round
-			cs.ValidBlock = cs.ProposalBlock
-			cs.ValidBlockParts = cs.ProposalBlockParts
-		}
-		// TODO: In case there is +2/3 majority in Prevotes set for some
-		// block and cs.ProposalBlock contains different block, either
-		// proposer is faulty or voting power of faulty processes is more
-		// than 1/3. We should trigger in the future accountability
-		// procedure at this point.
+	// bypass prevotes
+	if cs.ValidRound < cs.Round {
+		cs.ValidRound = cs.Round
+		cs.ValidBlock = cs.ProposalBlock
+		cs.ValidBlockParts = cs.ProposalBlockParts
 	}
 
-	if cs.Step <= cstypes.RoundStepPropose && cs.isProposalComplete() {
+	if cs.Step <= cstypes.RoundStepPrevote && cs.isProposalComplete() {
 		// Move onto the next step
-		cs.enterPrevote(blockHeight, cs.Round)
-		if hasTwoThirds { // this is optimisation as this will be triggered when prevote is added
-			cs.enterPrecommit(blockHeight, cs.Round)
-		}
+		cs.enterPrecommit(blockHeight, cs.Round)
 	} else if cs.Step == cstypes.RoundStepCommit {
 		// If we're waiting on the proposal block...
 		cs.tryFinalizeCommit(blockHeight)

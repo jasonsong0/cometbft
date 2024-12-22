@@ -1,0 +1,58 @@
+syntax = "proto3";
+package tendermint.primary;
+
+option go_package = "github.com/cometbft/cometbft/proto/tendermint/primary";
+
+import "gogoproto/gogo.proto";
+//import "google/protobuf/timestamp.proto";
+
+message Txs {
+  repeated bytes txs = 1;
+}
+
+message PrimaryDagHeader {
+  int64 dag_round   = 1;
+  bytes author_address = 2;  
+  repeated bytes parents = 3;  // dagheaderhash from parents
+  repeated bytes batch_digests = 4;   
+}
+
+message PrimaryDagVote {
+  bytes dagHeaderHash = 1;
+  int64 round = 2;
+  bytes origin_address = 3; // header proposer
+  bytes voter_address = 4;
+  bytes signature = 5;
+}
+
+message DagVote {
+  bytes validator_address = 1;
+  bytes signature = 2;
+}
+
+message PrimaryDagCert {
+  bytes dagHeaderHash = 1;
+  PrimaryDagHeader dag_header = 2;
+  repeated DagVote votes = 3;
+}
+
+// if dag_round is 0, it means the request is for the latest dag round
+message PrimaryParentReq {
+  int64 dag_round   = 1;
+}
+
+// origin_address, cert_digest are the same indexed data
+message PrimaryParentResp {
+  int64 dag_round   = 1;
+  repeated bytes origin_address = 2;
+  repeated bytes cert_digest = 3;
+}
+
+
+message Message {
+  oneof sum {
+    PrimaryDagHeader primary_dag_header = 1;
+    PrimaryDagVote primary_dag_vote = 2;
+    PrimaryDagCert primary_dag_cert = 3;
+  }
+}

@@ -189,3 +189,34 @@ message Batch {
   [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];  
 }
   */
+
+message DagVoteInfo {
+  bytes         voter_addr = 1;
+  bytes         signature = 2;
+}
+
+// Header defines the structure of a block header.
+message DagHeader {
+  // basic block info
+  int64 dag_round   = 1;
+  bytes author_address = 2;  
+  repeated bytes parents = 3;  // dagheaderhash from parents
+  repeated bytes batch4worker = 4;   //TODO: originally only digest is used for batch, but poc v1, we use the whole txs
+}
+
+
+// Cert represents certification from validators for header
+message DagCert {
+  DagHeader dag_header = 1;
+  repeated DagVoteInfo votes = 2;
+}
+
+message DagRound {
+  int64 round = 1;
+  tendermint.types.ValidatorSet validators = 2;
+  google.protobuf.Timestamp    start_time         = 3
+  [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
+  int64 start_height = 4;
+  int64 end_height = 5;
+  repeated bytes parents = 6;
+}

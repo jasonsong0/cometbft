@@ -348,6 +348,26 @@ func (vals *ValidatorSet) GetProposer() (proposer *Validator) {
 	return vals.Proposer.Copy()
 }
 
+// SetProposer returns the current proposer. If the validator set is empty, nil
+// is returned.
+func (vals *ValidatorSet) SetLeader(leaderAddr Address) error {
+	if len(vals.Validators) == 0 {
+		panic("No validators. can't set leader")
+	}
+
+	for _, val := range vals.Validators {
+		if bytes.Equal(val.Address, leaderAddr) {
+			vals.Proposer = val
+		}
+	}
+
+	if !bytes.Equal(vals.Proposer.Address, leaderAddr) {
+		return errors.New("cannot found address in validator set")
+	}
+	return nil
+}
+
+// find leader if not set by SetLeader
 func (vals *ValidatorSet) findProposer() *Validator {
 	var proposer *Validator
 	for _, val := range vals.Validators {

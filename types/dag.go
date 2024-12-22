@@ -3,42 +3,27 @@ package types
 import (
 	"errors"
 	"fmt"
+	"time"
 
+	cmtsync "github.com/cometbft/cometbft/libs/sync"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
-	"github.com/tendermint/tendermint/types"
 )
 
-// BlockMeta contains meta information.
-type BlockMeta struct {
-	BlockID   BlockID `json:"block_id"`
-	BlockSize int     `json:"block_size"`
-	Header    Header  `json:"header"`
-	NumTxs    int     `json:"num_txs"`
+const ()
+
+// DagRound will be updated when new round received to leader.
+// start time is the block time of last height
+type DagRound struct {
+	mtx         cmtsync.Mutex
+	DagRound    int64         `json:"dag_round"`
+	Validators  *ValidatorSet `json:"validators"` // validator set for the dag round
+	StartTime   time.Time     `json:"start_time"`
+	StartHeight int64         `json:"start_height"`
+	EndHeight   int64         `json:"end_height"`
+	Parents     [][]byte      `json:"parents"`
 }
 
-// NewBlockMeta returns a new BlockMeta.
-func NewBlockMeta(block *Block, blockParts *PartSet) *BlockMeta {
-	return &BlockMeta{
-		BlockID:   BlockID{block.Hash(), blockParts.Header()},
-		BlockSize: block.Size(),
-		Header:    block.Header,
-		NumTxs:    len(block.Data.Txs),
-	}
-}
-
-func (bm *BlockMeta) ToProto() *cmtproto.BlockMeta {
-	if bm == nil {
-		return nil
-	}
-
-	pb := &cmtproto.BlockMeta{
-		BlockID:   bm.BlockID.ToProto(),
-		BlockSize: int64(bm.BlockSize),
-		Header:    *bm.Header.ToProto(),
-		NumTxs:    int64(bm.NumTxs),
-	}
-	return pb
-}
+//-------------------------------------
 
 func DagRoundFromProto(pb *cmtproto.DagRound) (*DagRound, error) {
 	bm, err := DagRoundFromTrustedProto(pb)
@@ -61,7 +46,7 @@ func DagRoundFromTrustedProto(pb *cmtproto.DagRound) (*DagRound, error) {
 	dr.EndHeight = pb.EndHeight
 	dr.Parents = pb.Parents
 	if pb.Validators == nil {
-		vals, err := types.ValidatorSetFromProto(pb.Validators)
+		vals, err := ValidatorSetFromProto(pb.Validators)
 		if err != nil {
 			return nil, err
 		}
@@ -77,7 +62,7 @@ func (bm *DagRound) ValidateBasic() error {
 		return fmt.Errorf("DagRound must be greater than 0")
 	}
 
-	if bm.DagRound > 1 && len(pb.Parents) == 0 {
+	if bm.DagRound > 1 && len(bm.Parents) == 0 {
 		return fmt.Errorf("DagRound %d must have parents", bm.DagRound)
 	}
 	return nil

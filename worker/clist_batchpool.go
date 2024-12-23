@@ -11,6 +11,14 @@ import (
 	"github.com/cometbft/cometbft/types"
 )
 
+type ReapType int
+
+const (
+	ReapNormal ReapType = iota
+	ReapMaxSize
+	ReapMaxGas
+)
+
 // CListBatchpool is an ordered in-memory pool for batchs before they are
 // proposed in a consensus round. The Batchpool uses a concurrent list structure for storing batchs that can
 // be efficiently accessed by multiple concurrent readers.
@@ -236,7 +244,10 @@ func (mem *CListBatchpool) notifyBatchesAvailable() {
 // Safe for concurrent use by multiple goroutines.
 // primary decides mas bytes, gas for each worker.
 // only returns acked batches
-func (mem *CListBatchpool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Batches {
+// if return over size, trigger type = 1
+// if return over gas, trigger type = 2
+// else trigger type = 0
+func (mem *CListBatchpool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) (types.Batches, ReapType) {
 	mem.updateMtx.RLock()
 	defer mem.updateMtx.RUnlock()
 
@@ -263,7 +274,7 @@ func (mem *CListBatchpool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Batc
 
 		// Check total size requirement
 		if maxBytes > -1 && runningSize+int64(dataSize) > maxBytes {
-			return batches[:len(batches)-1]
+			return batches[:len(batches)-1], ReapMaxSize
 		}
 
 		runningSize += int64(dataSize)
@@ -274,11 +285,11 @@ func (mem *CListBatchpool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Batc
 		// must be non-negative, it follows that this won't overflow.
 		newTotalGas := totalGas + b.gasWanted
 		if maxGas > -1 && newTotalGas > maxGas {
-			return batches[:len(batches)-1]
+			return batches[:len(batches)-1], ReapMaxGas
 		}
 		totalGas = newTotalGas
 	}
-	return batches
+	return batches, ReapNormal
 }
 
 // Safe for concurrent use by multiple goroutines.

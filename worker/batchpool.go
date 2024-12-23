@@ -38,7 +38,7 @@ type Batchpool interface {
 	//
 	// If both maxes are negative, there is no cap on the size of all returned
 	// transactions (~ all available transactions).
-	ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Batches
+	ReapMaxBytesMaxGas(maxBytes, maxGas int64) (types.Batches, ReapType)
 
 	// Lock locks the batchpool. The consensus must be able to hold lock to safely
 	// update.

@@ -1,11 +1,11 @@
 package types
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
-	"github.com/tendermint/tendermint/types"
 )
 
 // BlockMeta contains meta information.
@@ -40,45 +40,47 @@ func (bm *BlockMeta) ToProto() *cmtproto.BlockMeta {
 	return pb
 }
 
-func DagRoundFromProto(pb *cmtproto.DagRound) (*DagRound, error) {
-	bm, err := DagRoundFromTrustedProto(pb)
+func BlockMetaFromProto(pb *cmtproto.BlockMeta) (*BlockMeta, error) {
+	bm, err := BlockMetaFromTrustedProto(pb)
 	if err != nil {
 		return nil, err
 	}
 	return bm, bm.ValidateBasic()
 }
 
-func DagRoundFromTrustedProto(pb *cmtproto.DagRound) (*DagRound, error) {
+func BlockMetaFromTrustedProto(pb *cmtproto.BlockMeta) (*BlockMeta, error) {
 	if pb == nil {
-		return nil, errors.New("daground is empty")
+		return nil, errors.New("blockmeta is empty")
 	}
 
-	dr := new(DagRound)
+	bm := new(BlockMeta)
 
-	dr.DagRound = pb.Round
-	dr.StartTime = pb.StartTime
-	dr.StartHeight = pb.StartHeight
-	dr.EndHeight = pb.EndHeight
-	dr.Parents = pb.Parents
-	if pb.Validators == nil {
-		vals, err := types.ValidatorSetFromProto(pb.Validators)
-		if err != nil {
-			return nil, err
-		}
-		dr.Validators = vals
+	bi, err := BlockIDFromProto(&pb.BlockID)
+	if err != nil {
+		return nil, err
 	}
 
-	return dr, nil
+	h, err := HeaderFromProto(&pb.Header)
+	if err != nil {
+		return nil, err
+	}
+
+	bm.BlockID = *bi
+	bm.BlockSize = int(pb.BlockSize)
+	bm.Header = h
+	bm.NumTxs = int(pb.NumTxs)
+
+	return bm, nil
 }
 
 // ValidateBasic performs basic validation.
-func (bm *DagRound) ValidateBasic() error {
-	if bm.DagRound <= 0 {
-		return fmt.Errorf("DagRound must be greater than 0")
+func (bm *BlockMeta) ValidateBasic() error {
+	if err := bm.BlockID.ValidateBasic(); err != nil {
+		return err
 	}
-
-	if bm.DagRound > 1 && len(pb.Parents) == 0 {
-		return fmt.Errorf("DagRound %d must have parents", bm.DagRound)
+	if !bytes.Equal(bm.BlockID.Hash, bm.Header.Hash()) {
+		return fmt.Errorf("expected BlockID#Hash and Header#Hash to be the same, got %X != %X",
+			bm.BlockID.Hash, bm.Header.Hash())
 	}
 	return nil
 }

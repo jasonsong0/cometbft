@@ -3,11 +3,15 @@ package primary
 import (
 	"math"
 
+	primaryproto "github.com/cometbft/cometbft/proto/tendermint/primary"
 	"github.com/cometbft/cometbft/types"
 )
 
+// primary pool used for queueing and processing header
+// only meant for leader node
+
 const (
-	PrimarypoolChannel = byte(0x31) // Batch channel used 0x31 for poc v1
+	PrimarypoolChannel = byte(0x31) // header channel used 0x31 for poc v1
 
 	// PeerCatchupSleepIntervalMS defines how much time to sleep if a peer is behind
 	PeerCatchupSleepIntervalMS = 100
@@ -21,29 +25,13 @@ const (
 
 //go:generate ../scripts/mockery_generate.sh Mempool
 
-// primary pool contains the interface to handling header, vote, cert.
+// primary pool contains the interface to handling header
+// all header in the pool should be certified
 type pool interface {
+	AddHeader(header primaryproto.PrimaryDagHeader) error
+	RemoveHeaderByKey(batchKey types.DagHeaderKey) error
 
-	AddHeader(header types.DagHeader) error
-	// RemoveTxByKey removes a batch, identified by its key,
-	// from the batchpool.
-	RemoveBatchByKey(batchKey types.BatchKey) error
-
-	// ReapMaxBytesMaxGas reaps batchs from the batchpool up to maxBytes
-	// bytes total with the condition that the total gasWanted must be less than
-	// maxGas.
-	//
-	// If both maxes are negative, there is no cap on the size of all returned
-	// transactions (~ all available transactions).
-	ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Batches
-
-	// Lock locks the batchpool. The consensus must be able to hold lock to safely
-	// update.
-	// Before acquiring the lock, it signals the batchpool that a new update is coming.
-	// If the batchpool is still rechecking at this point, it should be considered full.
 	Lock()
-
-	// Unlock unlocks the batchpool.
 	Unlock()
 
 	// Update informs the batchpool that the given batches were committed and can be
@@ -55,11 +43,11 @@ type pool interface {
 	// TODO: check batch
 	Update(
 		blockHeight int64,
-		blockBatches types.Batches,
+		blockHeaderKey types.DagHeaderKey,
 	) error
 	// TODO: check garbage collection logic
 
-	// Flush removes all transactions from the batchpool and caches.
+	// Flush removes all headers from the pool
 	Flush()
 
 	// TxsAvailable returns a channel which fires once for every dag-round, and only

@@ -34,6 +34,10 @@ type Batch struct {
 
 type Batches []Batch
 
+func (bk BatchKey) Slice() []byte {
+	return bk[:]
+}
+
 // Hash computes the TMHASH hash of the wire encoded transaction.
 func (b Batch) Hash() []byte {
 	return b.TxArr.Hash()

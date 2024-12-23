@@ -48,11 +48,20 @@ message PrimaryParentResp {
   repeated bytes cert_digest = 3;
 }
 
+// tmp use
+message PrimaryLeaderNotify {
+  int64 from_dag_round   = 1;
+  bytes leader_address = 2;
+}
+
 
 message Message {
   oneof sum {
     PrimaryDagHeader primary_dag_header = 1;
     PrimaryDagVote primary_dag_vote = 2;
     PrimaryDagCert primary_dag_cert = 3;
+    PrimaryParentReq primary_parent_req = 4;
+    PrimaryParentResp primary_parent_resp = 5;
+    PrimaryLeaderNotify primary_leader_notify = 6;
   }
 }
